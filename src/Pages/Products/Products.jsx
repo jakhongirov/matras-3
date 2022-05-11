@@ -91,7 +91,7 @@ function Products() {
     reader.onload = () => {
       setImg(reader.result);
     };
-    setModalLoading(true);
+    setModalLoading(false);
   };
 
   const checkboxChange = (e) => {
@@ -118,21 +118,21 @@ function Products() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const inputs = document.querySelectorAll(".up_input");
-    if (inputs.length && url.length) {
+    if (inputs.length && url.length && method == "PUT") {
       fetch(`${port.url}/updateorder`, {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json", token: token },
         body: JSON.stringify({
+          id: id,
           image: url,
           category_id: inputs[1].value,
           prod_name: inputs[2].value,
           prod_price: parseInt(inputs[3].value),
           prod_weight: parseInt(inputs[4].value),
           prod_desc: inputs[5].value,
-          prod_warrant: parseInt(inputs[6].value),
+          prod_warrant: inputs[6].value,
           prod_capacity: parseInt(inputs[7].value),
-          // sale_price: parseInt(inputs[8].value) ? parseInt(inputs[8].value) : null,
-          prod_stock: inputs[9].checked,
+          prod_stock: parseInt(inputs[8].value) ? parseInt(inputs[8].value) : 0,
           prod_desc: inputs[10].value,
           prod_new: inputs[11].checked,
           prod_status: inputs[12].checked,
@@ -147,13 +147,41 @@ function Products() {
         })
         .catch((err) => console.log(err))
 
+    } else {
+      fetch(`${port.url}/newproduct`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", token: token },
+        body: JSON.stringify({
+          image: url,
+          category_id: inputs[1].value,
+          prod_name: inputs[2].value,
+          prod_price: parseInt(inputs[3].value),
+          prod_weight: parseInt(inputs[4].value),
+          prod_desc: inputs[5].value,
+          prod_warrant: parseInt(inputs[6].value),
+          prod_capacity: parseInt(inputs[7].value),
+          prod_stock: inputs[9].checked,
+          prod_desc: inputs[10].value,
+          prod_new: inputs[11].checked,
+          prod_status: inputs[12].checked,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status == 200) {
+            setModalLoading(false);
+            window.location.reload();
+          }
+        })
+        .catch((err) => console.log(err))
     }
+
     setModalLoading(true);
   };
 
   const deleteBtnClick = (e) => {
     // setMethod("DELETE");
-    
+
     fetch(`${port.url}/`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
@@ -178,10 +206,10 @@ function Products() {
 
   const editBtnClick = (e) => {
     const productValue = JSON.parse(e.target.dataset.product);
-    setUrl(productValue.images);
-    setImgLength(productValue.images.length)
+    setUrl(productValue.prod_image);
+    setImgLength(productValue.prod_image.length)
     setDefaultValue(productValue);
-    setId(productValue.id);
+    setId(productValue.prod_id);
     setMethod("PUT");
     setModal(true);
   };
@@ -206,7 +234,7 @@ function Products() {
         ? img
           ? `url(${img})`
           : `url(${image})`
-        : `url(${defaultValue ? defaultValue.images[0] : img})`,
+        : `url(${defaultValue ? defaultValue.prod_image[0] : img})`,
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
     backgroundSize:
@@ -335,7 +363,7 @@ function Products() {
                 </select>
                 <label htmlFor="Tovar">Tovar nomi</label>
                 <input
-                  defaultValue={method === "PUT" ? defaultValue.name : ""}
+                  defaultValue={method === "PUT" ? defaultValue.prod_name : ""}
                   placeholder="masalan: Lux Soft Memory"
                   required
                   className="up_input"
@@ -344,7 +372,7 @@ function Products() {
                 />
                 <label htmlFor="Narxi">Narxi</label>
                 <input
-                  defaultValue={method === "PUT" ? defaultValue.price : ""}
+                  defaultValue={method === "PUT" ? defaultValue.prod_price : ""}
                   placeholder="masalan: 20 000"
                   required
                   className="up_input"
@@ -353,7 +381,7 @@ function Products() {
                 />
                 <label htmlFor="Yuklama">Yuklama</label>
                 <input
-                  defaultValue={method === "PUT" ? defaultValue.cargo : ""}
+                  defaultValue={method === "PUT" ? defaultValue.prod_weight : ""}
                   placeholder="masalan: 200 kg"
                   required
                   className="up_input"
@@ -364,7 +392,7 @@ function Products() {
               <div className="loaction_wrapper products_inputs_wrapper">
                 <label htmlFor="Razmeri">Razmeri</label>
                 <input
-                  defaultValue={method === "PUT" ? defaultValue.dimensions : ""}
+                  defaultValue={method === "PUT" ? defaultValue.prod_size : ""}
                   required
                   className="up_input"
                   id="Razmeri"
@@ -373,7 +401,7 @@ function Products() {
                 />
                 <label htmlFor="Kafolat">Kafolat</label>
                 <input
-                  defaultValue={method === "PUT" ? defaultValue.warranty : ""}
+                  defaultValue={method === "PUT" ? defaultValue.prod_warrant : ""}
                   required
                   className="up_input"
                   id="Kafolat"
@@ -382,7 +410,7 @@ function Products() {
                 />
                 <label htmlFor="Sig’m">Sig’m</label>
                 <input
-                  defaultValue={method === "PUT" ? defaultValue.capacity : ""}
+                  defaultValue={method === "PUT" ? defaultValue.prod_capacity : ""}
                   required
                   className="up_input"
                   id="Sig’m"
@@ -393,7 +421,7 @@ function Products() {
                   <p>Aksiya Narxi</p>
                   <input
                     defaultValue={
-                      method === "PUT" ? defaultValue.sale_price : ""
+                      method === "PUT" ? defaultValue.prod_stock : ""
                     }
                     className="up_input"
                     type="text"
@@ -403,7 +431,7 @@ function Products() {
                 <label className="tick_wrapper">
                   <input
                     defaultChecked={
-                      method === "PUT" ? defaultValue.is_on_sale : false
+                      method === "PUT" ? defaultValue.stock : false
                     }
                     className="up_input"
                     type="checkbox"
@@ -416,7 +444,7 @@ function Products() {
                   <p>Ma’lumot</p>
                   <textarea
                     defaultValue={
-                      method === "PUT" ? defaultValue.description : ""
+                      method === "PUT" ? defaultValue.prod_desc : ""
                     }
                     required
                     className="up_input"
@@ -431,7 +459,7 @@ function Products() {
                     New
                     <input
                       defaultValue={
-                        method === "PUT" ? defaultValue.is_new : true
+                        method === "PUT" ? defaultValue.prod_new : true
                       }
                       defaultChecked={true}
                       className="up_input"
@@ -447,7 +475,7 @@ function Products() {
                     Active
                     <input
                       defaultValue={
-                        method === "PUT" ? defaultValue.product_is_active : true
+                        method === "PUT" ? defaultValue.prod_status : true
                       }
                       defaultChecked={true}
                       className="up_input"
